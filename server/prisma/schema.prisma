@@ -1,0 +1,99 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Games {
+  game_id   Int             @id @default(autoincrement())
+  game_name String          @db.VarChar(100)
+  genre     String          @db.VarChar(50)
+  platform  Platform        // ใช้ enum สำหรับ Platform
+  game_image String?        @db.VarChar(255)
+  gameAccounts GameAccounts[]
+}
+
+model GameAccounts {
+  game_accounts_id Int       @id @default(autoincrement())
+  game_id         Int
+  account_username String     @db.VarChar(100)
+  account_password String     @db.VarChar(50)
+  descriptions    String     @db.VarChar(255)
+  price           Float
+  games           Games      @relation(fields: [game_id], references: [game_id])
+  reviews         Review[]
+  orders          Order[]
+}
+
+model Order {
+  order_id        Int       @id @default(autoincrement())
+  user_id        Int
+  game_accounts_id Int
+  total_price     Float
+  order_status    OrderStatus @default(กำลังดำเนินการ)
+  created_at      DateTime   @default(now())
+  user            User       @relation(fields: [user_id], references: [user_id])
+  gameAccount     GameAccounts @relation(fields: [game_accounts_id], references: [game_accounts_id])
+}
+
+model Payment {
+  payment_id      Int       @id @default(autoincrement())
+  order_id        Int
+  user_id         Int
+  payment_method   PaymentMethod
+  payment_status   PaymentStatus @default(กำลังดำเนินการ)
+  transaction_id   String?     @db.VarChar(191)
+  paid_at         DateTime?   @db.DateTime(3)
+}
+
+model Review {
+  review_id       Int       @id @default(autoincrement())
+  user_id        Int
+  game_accounts_id Int
+  rating          Int?
+  comment         String?   @db.VarChar(191)
+  created_at      DateTime  @default(now())
+  user            User      @relation(fields: [user_id], references: [user_id])
+  gameAccount     GameAccounts @relation(fields: [game_accounts_id], references: [game_accounts_id])
+}
+
+model User {
+  user_id        Int       @id @default(autoincrement())
+  username       String     @db.VarChar(191)
+  email          String     @db.VarChar(191)
+  password       String     @db.VarChar(191)
+  role           UserRole   @default(user)
+  orders         Order[]
+  reviews        Review[]
+}
+
+enum Platform {
+  PC
+  Mobile
+}
+
+enum OrderStatus {
+  กำลังดำเนินการ
+  สำเร็จ
+  ไม่สำเร็จ
+}
+
+enum PaymentMethod {
+  MasterCard
+  Paypal
+  PromptPay
+}
+
+enum PaymentStatus {
+  กำลังดำเนินการ
+  สำเร็จ
+  ไม่สำเร็จ
+}
+
+enum UserRole {
+  user
+  admin
+}
